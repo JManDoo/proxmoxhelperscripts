@@ -3,6 +3,7 @@
 # Copyright (c) 2021-2025 community-scripts ORG
 # Author: Jason Hargreaves (JManDoo)
 # License: MIT | https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
+# bash -c "$(curl -fsSL https://raw.githubusercontent.com/JManDoo/proxmoxhelperscripts/refs/heads/main/tailscale-vm.sh)"
 
 source /dev/stdin <<<$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/api.func)
 
@@ -381,7 +382,7 @@ function advanced_settings() {
     if [ -z $AUTHKEY1 ]; then
       AUTHKEY1="Default"
       AUTHKEY=""
-      echo -e "${DEFAULT}${BOLD}${DGN}Interface MTU Size: ${BGN}$AUTHKEY1${CL}"
+      echo -e "${DEFAULT}${BOLD}${DGN}Authkey: ${BGN}$AUTHKEY1${CL}"
     else
       AUTHKEY=",AUTHKEY1=$AUTHKEY1"
       echo -e "${DEFAULT}${BOLD}${DGN}Authkey: ${BGN}$AUTHKEY1${CL}"
@@ -497,6 +498,7 @@ virt-customize -q -a "${FILE}" --install qemu-guest-agent,apt-transport-https,ca
   virt-customize -q -a "${FILE}" --run-command "mkdir -p /etc/apt/keyrings && curl -fsSL https://pkgs.tailscale.com/stable/debian/bookworm.noarmor.gpg | tee /usr/share/keyrings/tailscale-archive-keyring.gpg" >/dev/null &&
   virt-customize -q -a "${FILE}" --run-command "curl -fsSL https://pkgs.tailscale.com/stable/debian/bookworm.tailscale-keyring.list | tee /etc/apt/sources.list.d/tailscale.list" &&
   virt-customize -q -a "${FILE}" --run-command "apt-get update -qq && apt-get install -y tailscale" >/dev/null &&
+  virt-customize -q -a "${FILE}" --run-command "echo export ts_authkey=$AUTHKEY1" >> /etc/profile.d/custom_env.sh
   virt-customize -q -a "${FILE}" --hostname "${HN}" >/dev/null &&
   virt-customize -q -a "${FILE}" --run-command "echo -n > /etc/machine-id" >/dev/null
 msg_ok "Added Tailscale to Debian 12 Qcow2 Disk Image successfully"
@@ -560,4 +562,4 @@ if [ "$START_VM" == "yes" ]; then
   msg_ok "Started Tailscale VM"
 fi
 post_update_to_api "done" "none"
-msg_ok "Completed Successfully!\n"
+msg_ok "Completed Successfully!\n Please run: tailscale up --auth-key=$ts_authkey --advertise-exit-node\nIn the newly created Tailscale VM"
