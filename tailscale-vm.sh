@@ -528,8 +528,8 @@ fi
 
 msg_info "Adding Tailscale to Debian 13 Qcow2 Disk Image"
 virt-customize -q -a "${FILE}" --install qemu-guest-agent,apt-transport-https,ca-certificates,curl,gnupg,software-properties-common,lsb-release >/dev/null &&
-  virt-customize -q -a "${FILE}" --run-command "mkdir -p /etc/apt/keyrings && curl -fsSL https://pkgs.tailscale.com/stable/debian/bookworm.noarmor.gpg | tee /usr/share/keyrings/tailscale-archive-keyring.gpg" >/dev/null &&
-  virt-customize -q -a "${FILE}" --run-command "curl -fsSL https://pkgs.tailscale.com/stable/debian/bookworm.tailscale-keyring.list | tee /etc/apt/sources.list.d/tailscale.list" &&
+  virt-customize -q -a "${FILE}" --run-command "mkdir -p /etc/apt/keyrings && curl -fsSL https://pkgs.tailscale.com/stable/debian/trixie.noarmor.gpg | tee /usr/share/keyrings/tailscale-archive-keyring.gpg" >/dev/null &&
+  virt-customize -q -a "${FILE}" --run-command "curl -fsSL https://pkgs.tailscale.com/stable/debian/trixie.tailscale-keyring.list | tee /etc/apt/sources.list.d/tailscale.list" &&
   virt-customize -q -a "${FILE}" --run-command "apt-get update -qq && apt-get install -y procps tailscale" >/dev/null &&
   virt-customize -q -a "${FILE}" --run-command "echo export ts_authkey=$AUTHKEY1 >> /etc/profile.d/custom_env.sh" >/dev/null &&
   virt-customize -q -a "${FILE}" --run-command "echo 'net.ipv4.ip_forward = 1' | tee -a /etc/sysctl.d/99-tailscale.conf" >/dev/null && 
