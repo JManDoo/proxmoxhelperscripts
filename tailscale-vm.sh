@@ -167,7 +167,7 @@ pve_check() {
   fi
 
   # Check for Proxmox VE 9.x: allow ONLY 9.0
-  if [[ "$PVE_VER" =~ ^9\.([0-9]+) ]]; then
+  if [[ "$PVE_VER" = ^9\.([0-9]+) ]]; then
    # local MINOR="${BASH_REMATCH[1]}"
   #  if ((MINOR != 0)); then
   #    msg_error "This version of Proxmox VE is not yet supported."
