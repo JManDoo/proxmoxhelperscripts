@@ -25,7 +25,7 @@ RANDOM_UUID="$(cat /proc/sys/kernel/random/uuid)"
 METHOD=""
 NSAPP="tailscale-vm"
 var_os="debian"
-var_version="12"
+var_version="13"
 DISK_SIZE="10G"
 
 YW=$(echo "\033[33m")
@@ -140,14 +140,47 @@ function check_root() {
   fi
 }
 
-function pve_check() {
-  if ! pveversion | grep -Eq "pve-manager/8\.[1-4](\.[0-9]+)*"; then
-    msg_error "${CROSS}${RD}This version of Proxmox Virtual Environment is not supported"
-    echo -e "Requires Proxmox Virtual Environment Version 8.1 or later."
-    echo -e "Exiting..."
-    sleep 2
-    exit
+#function pve_check() {
+#  if ! pveversion | grep -Eq "pve-manager/8\.[1-4](\.[0-9]+)*"; then
+#    msg_error "${CROSS}${RD}This version of Proxmox Virtual Environment is not supported"
+#    echo -e "Requires Proxmox Virtual Environment Version 8.1 or later."
+#    echo -e "Exiting..."
+#    sleep 2
+#    exit
+#  fi
+
+# This function checks the version of Proxmox Virtual Environment (PVE) and exits if the version is not supported.
+# Supported: Proxmox VE 8.0.x – 8.9.x and 9.0 (NOT 9.1+)
+pve_check() {
+  local PVE_VER
+  PVE_VER="$(pveversion | awk -F'/' '{print $2}' | awk -F'-' '{print $1}')"
+
+  # Check for Proxmox VE 8.x: allow 8.0–8.9
+  if [[ "$PVE_VER" =~ ^8\.([0-9]+) ]]; then
+    local MINOR="${BASH_REMATCH[1]}"
+    if ((MINOR < 0 || MINOR > 9)); then
+      msg_error "This version of Proxmox VE is not supported."
+      msg_error "Supported: Proxmox VE version 8.0 – 8.9"
+      exit 1
+    fi
+    return 0
   fi
+
+  # Check for Proxmox VE 9.x: allow ONLY 9.0
+  if [[ "$PVE_VER" =~ ^9\.([0-9]+) ]]; then
+    local MINOR="${BASH_REMATCH[1]}"
+    if ((MINOR != 0)); then
+      msg_error "This version of Proxmox VE is not yet supported."
+      msg_error "Supported: Proxmox VE version 9.0"
+      exit 1
+    fi
+    return 0
+  fi
+
+  # All other unsupported versions
+  msg_error "This version of Proxmox VE is not supported."
+  msg_error "Supported versions: Proxmox VE 8.0 – 8.x or 9.0"
+  exit 1
 }
 
 function arch_check() {
@@ -455,8 +488,8 @@ else
 fi
 msg_ok "Using ${CL}${BL}$STORAGE${CL} ${GN}for Storage Location."
 msg_ok "Virtual Machine ID is ${CL}${BL}$VMID${CL}."
-msg_info "Retrieving the URL for the Debian 12 Qcow2 Disk Image"
-URL="https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-nocloud-$(dpkg --print-architecture).qcow2"
+msg_info "Retrieving the URL for the Debian 13 Qcow2 Disk Image"
+URL="https://cloud.debian.org/images/cloud/trixie/latest/debian-13-nocloud-$(dpkg --print-architecture).qcow2"
 sleep 2
 msg_ok "${CL}${BL}${URL}${CL}"
 curl -f#SL -o "$(basename "$URL")" "$URL"
@@ -493,7 +526,7 @@ if ! command -v virt-customize &>/dev/null; then
   msg_ok "Installed libguestfs-tools successfully"
 fi
 
-msg_info "Adding Tailscale to Debian 12 Qcow2 Disk Image"
+msg_info "Adding Tailscale to Debian 13 Qcow2 Disk Image"
 virt-customize -q -a "${FILE}" --install qemu-guest-agent,apt-transport-https,ca-certificates,curl,gnupg,software-properties-common,lsb-release >/dev/null &&
   virt-customize -q -a "${FILE}" --run-command "mkdir -p /etc/apt/keyrings && curl -fsSL https://pkgs.tailscale.com/stable/debian/bookworm.noarmor.gpg | tee /usr/share/keyrings/tailscale-archive-keyring.gpg" >/dev/null &&
   virt-customize -q -a "${FILE}" --run-command "curl -fsSL https://pkgs.tailscale.com/stable/debian/bookworm.tailscale-keyring.list | tee /etc/apt/sources.list.d/tailscale.list" &&
@@ -504,7 +537,7 @@ virt-customize -q -a "${FILE}" --install qemu-guest-agent,apt-transport-https,ca
   virt-customize -q -a "${FILE}" --run-command "sysctl -p /etc/sysctl.d/99-tailscale.conf" >/dev/null &&
   virt-customize -q -a "${FILE}" --hostname "${HN}" >/dev/null &&
   virt-customize -q -a "${FILE}" --run-command "echo -n > /etc/machine-id" >/dev/null
-msg_ok "Added Tailscale to Debian 12 Qcow2 Disk Image successfully"
+msg_ok "Added Tailscale to Debian 13 Qcow2 Disk Image successfully"
 
 msg_info "Expanding root partition to use full disk space"
 qemu-img create -f qcow2 expanded.qcow2 ${DISK_SIZE} >/dev/null 2>&1
